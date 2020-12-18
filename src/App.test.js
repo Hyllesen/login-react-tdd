@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 
@@ -25,7 +25,7 @@ describe("Sign up page", () => {
     signInLink = screen.getByText("Already have an account? Sign in");
   });
 
-  test("Fill out sign up form and see confirmation", () => {
+  test("Fill out sign up form and see confirmation", async () => {
     userEvent.type(firstNameInput, "Stefan");
     userEvent.type(lastNameInput, "Hyltoft");
     userEvent.type(emailInput, "stefanhyltoft@gmail.com");
@@ -33,17 +33,30 @@ describe("Sign up page", () => {
     userEvent.click(termsAndConditionsChk);
     userEvent.click(signUpButton);
 
-    const checkForActivationLink = screen.getByText(
-      "Thank you for signing up! Please check your email for activation link."
-    );
+    await act(async () => await userEvent.click(signUpButton));
+
+    await waitFor(() => {
+      const checkForActivationLink = screen.getByText(
+        "Thank you for signing up! Please check your email for activation link."
+      );
+    });
   });
 
-  test("Missing fields", () => {
-    userEvent.click(signUpButton);
+  test("Missing fields", async () => {
+    await act(async () => {
+      userEvent.click(signUpButton);
+    });
 
     const checkForActivationLink = screen.queryByText(
       "Thank you for signing up! Please check your email for activation link."
     );
     expect(checkForActivationLink).toBeNull();
+    const firstNameMissing = screen.getByText("Missing first name");
+    const lastNameMissing = screen.getByText("Missing last name");
+    const emailMissing = screen.getByText("Missing email");
+    const passwordMissing = screen.getByText("Missing password");
+    const termsMissing = screen.getByText(
+      "Please accept our terms and conditions"
+    );
   });
 });

@@ -11,12 +11,14 @@ import Box from "@material-ui/core/Box";
 import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
 import Typography from "@material-ui/core/Typography";
 import Container from "@material-ui/core/Container";
+import FormHelperText from "@material-ui/core/FormHelperText";
 import { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import CheckEmailForActivation from "./CheckEmailForActivation";
 import Copyright from "./Copyright";
 import useStyles from "./useStyles";
+import LinearProgress from "@material-ui/core/LinearProgress";
 
 const validationSchema = Yup.object().shape({
   firstName: Yup.string().required("Missing first name"),
@@ -25,34 +27,63 @@ const validationSchema = Yup.object().shape({
   password: Yup.string()
     .min(8, "Password should be 8 characters long")
     .required("Missing password"),
-  acceptTerms: Yup.bool().oneOf([true], "Please accept our terms"),
+  acceptTerms: Yup.bool().oneOf(
+    [true],
+    "Please accept our terms and conditions"
+  ),
 });
 
 export default function SignUp() {
   const [signedUp, setSignedUp] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const classes = useStyles();
+  const formik = useFormik({
+    initialValues: {
+      firstName: "",
+      lastName: "",
+      password: "",
+      acceptTerms: false,
+      email: "",
+    },
+    validationSchema: validationSchema,
+    onSubmit: async (values, { setSubmitting }) => {
+      setErrorMessage("");
+      console.log("signing up");
+      setSignedUp(true);
+    },
+  });
 
-  function submitForm() {
-    setSignedUp(true);
-    console.log("submitted form");
+  const {
+    touched,
+    errors,
+    isSubmitting,
+    handleChange: onChange,
+    handleBlur: onBlur,
+    handleSubmit,
+  } = formik;
+
+  if (isSubmitting) {
+    return (
+      <Typography component="h3" variant="h5">
+        <LinearProgress />
+        Vent venligst...
+      </Typography>
+    );
   }
 
   function signUpForm() {
     return (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          submitForm();
-        }}
-        className={classes.form}
-        noValidate
-      >
+      <form onSubmit={handleSubmit} className={classes.form} noValidate>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
             <TextField
               autoComplete="fname"
               name="firstName"
               variant="outlined"
+              onChange={onChange}
+              helperText={touched.firstName ? errors.firstName : ""}
+              error={touched.firstName && Boolean(errors.firstName)}
               required
               fullWidth
               id="firstName"
@@ -64,6 +95,9 @@ export default function SignUp() {
             <TextField
               variant="outlined"
               required
+              onChange={onChange}
+              helperText={touched.lastName ? errors.lastName : ""}
+              error={touched.lastName && Boolean(errors.lastName)}
               fullWidth
               id="lastName"
               label="Last Name"
@@ -75,6 +109,9 @@ export default function SignUp() {
             <TextField
               variant="outlined"
               required
+              onChange={onChange}
+              helperText={touched.email ? errors.email : ""}
+              error={touched.email && Boolean(errors.email)}
               fullWidth
               id="email"
               label="Email Address"
@@ -86,6 +123,9 @@ export default function SignUp() {
             <TextField
               variant="outlined"
               required
+              onChange={onChange}
+              helperText={touched.password ? errors.password : ""}
+              error={touched.password && Boolean(errors.password)}
               fullWidth
               name="password"
               label="Password"
@@ -96,11 +136,27 @@ export default function SignUp() {
           </Grid>
           <Grid item xs={12}>
             <FormControlLabel
-              control={<Checkbox value="allowExtraEmails" color="primary" />}
+              control={
+                <Checkbox
+                  onChange={onChange}
+                  value="acceptTerms"
+                  id="acceptTerms"
+                  name="acceptTerms"
+                  color="primary"
+                />
+              }
               label="I accept the terms and conditions"
             />
+            <FormHelperText error={Boolean(errors.acceptTerms)}>
+              {touched.acceptTerms ? errors.acceptTerms : ""}
+            </FormHelperText>
           </Grid>
         </Grid>
+
+        <Typography variant="subtitle2" color="error">
+          {errorMessage}
+        </Typography>
+
         <Button
           type="submit"
           fullWidth
